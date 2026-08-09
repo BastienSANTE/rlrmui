@@ -1,0 +1,82 @@
+#include <iostream>
+#include <vector>
+#include "raylib.h"
+
+enum layoutDirection {
+  LEFT,
+  RIGHT,
+  UP,
+  DOWN
+};
+
+enum layoutFillMode {
+  HFILL,
+  VFILL,
+  HVFILL,
+  FIXED
+};
+
+
+/*class Widget {
+  int x, y;    // Positions
+  bool active;
+
+  // Methods
+  virtual void Draw();
+  };*/
+
+
+class Layout {
+  layoutDirection dir;
+  layoutFillMode fillMode;
+  bool isRoot;              // Is this widget the root of the UI ?
+  Layout& parent;
+  std::vector<Layout> children;
+
+  void setRoot(){
+    isRoot = true;
+    parent = nullptr;
+    fillMode = HVFILL;
+  }
+
+  void AddLayout(Layout& l) {
+    children.push_backt(l);
+  }
+
+  void RemoveLayout(Layout& l){
+    children.erase(std::remove(children.begin(), children.end(), l,), v.end()); //Erase-remove idiom ?
+  }
+};
+
+
+
+class Frame {
+  int x, y, w, h;          //Contains other layouts
+  std::vector<Layout> children;
+      
+  void AddLayout(Layout& l) {
+    children.push_backt(l);
+  }
+
+  void RemoveLayout(Layout& l){
+    children.erase(std::remove(children.begin(), children.end(), l,), v.end()); //Erase-remove idiom ?
+  }
+  
+};
+
+
+// Functions
+
+void AddLayout(Frame f){
+  
+}
+
+
+void DebugDrawFrame(Frame f) {
+  if (f->children == nullptr) return;
+
+  Layout* iter = children[0];
+  while (iter != nullptr) {
+    iter++;
+  }
+}
