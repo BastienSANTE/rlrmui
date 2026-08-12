@@ -1,0 +1,38 @@
+typedef enum {
+  LEFT,
+  RIGHT,
+  UP,
+  DOWN,
+  CENTER
+} Alignment;
+
+typedef struct Frame {
+  int id;
+  float x;    // Starting position x and y
+  float y;
+  float w;    // Fraction of parent filled
+  float h;
+  bool root = false;
+  Frame* parent = NULL;
+  Frame* children = NULL;
+
+  // Private members, should not be set directly
+  int _pixelW;
+  int _pixelH;
+};
+
+class 
+
+void SetParent(Frame* f, Frame* p){
+  if (f->root) return;
+  f->parent = p;
+  return;
+}
+
+// Add child frame
+void AddChild(Frame* f, Frame* c){
+  f->children = c;
+
+  SetParent(c, f);
+  return;
+}
