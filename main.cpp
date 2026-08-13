@@ -4,7 +4,7 @@
 #include<unistd.h>
 //#include <iostream>
 #include "raylib.h"
-#include "rlrmui.h"
+#include "rlrmui.hpp"
 
 
 void DrawLayout(Frame* f){
@@ -47,19 +47,21 @@ int main(void) {
 
   Frame f = {1, 0, 0, screenWidth, screenHeight, true, NULL, NULL};
   Frame cf = {2, 0, 0, 0.5, 0.5, false, NULL, NULL};
+  struct Button b = {"Lorem Ipsum", 20, 20, 0, 0, 3};
   AddChild(&f, &cf);
   
-  //SetConfigFlags(FLAG_VSYNC_HINT);
+  SetConfigFlags(FLAG_VSYNC_HINT);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(screenWidth, screenHeight, "layout test");
-  SetTargetFPS(0);
 
   while(!WindowShouldClose()){
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
+    b.Draw();
+    
     DrawLayout(&f);
 
     //sleep(3);
