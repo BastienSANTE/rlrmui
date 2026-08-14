@@ -2,9 +2,8 @@
 #include<stdbool.h>
 #include<stdlib.h>
 #include<unistd.h>
-//#include <iostream>
 #include "raylib.h"
-#include "rlrmui.hpp"
+#include "rlrmui.h"
 
 
 void DrawLayout(Frame* f){
@@ -55,12 +54,13 @@ int main(void) {
 
   InitWindow(screenWidth, screenHeight, "layout test");
 
-  while(!WindowShouldClose()){
+  /*while(!WindowShouldClose()){
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    b.Draw();
+    b.draw = DrawButton;
+    b.draw(&b);
     
     DrawLayout(&f);
 
@@ -68,8 +68,13 @@ int main(void) {
     system("clear");
 
     EndDrawing();
-  }
+    }*/
 
+  while(!WindowShouldClose()){
+
+    PollInputEvents();
+    printf("%s\n", GetKeyPressed()? "a" : "b");
+  }
 }
 
   
