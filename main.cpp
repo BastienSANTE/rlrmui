@@ -3,7 +3,7 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include "raylib.h"
-#include "rlrmui.h"
+#include "window.h"
 
 
 void DrawLayout(Frame* f){
@@ -38,6 +38,14 @@ printf("frame %d has dimensions %d, %d, %f, %f, root=%d\n, parent = %#x, childre
   DrawRectangleLines(f->x, f->y, f->_pixelW, f->_pixelH, BLUE);
 }
 
+int RunApplication() {
+  while(!WindowShouldClose()) {
+    ProcessWindowEvents();
+    EndDrawing();
+  }
+  return 0;
+}
+
 
 int main(void) {
 
@@ -46,7 +54,8 @@ int main(void) {
 
   Frame f = {1, 0, 0, screenWidth, screenHeight, true, NULL, NULL};
   Frame cf = {2, 0, 0, 0.5, 0.5, false, NULL, NULL};
-  struct Button b = {"Lorem Ipsum", 20, 20, 0, 0, 3};
+  Button b = {"Lorem Ipsum", 20, 20, 0, 0, 3};
+  ValueBox vb = {0, 40, 40, 0, 0, 5, 24};
   AddChild(&f, &cf);
   
   SetConfigFlags(FLAG_VSYNC_HINT);
@@ -54,27 +63,15 @@ int main(void) {
 
   InitWindow(screenWidth, screenHeight, "layout test");
 
-  /*while(!WindowShouldClose()){
+  int framecount = 0;
+  char* framecountStr;
 
-    BeginDrawing();
-    ClearBackground(RAYWHITE);
-
-    b.draw = DrawButton;
-    b.draw(&b);
-    
-    DrawLayout(&f);
-
-    //sleep(3);
-    system("clear");
-
-    EndDrawing();
-    }*/
-
-  while(!WindowShouldClose()){
-
-    PollInputEvents();
-    printf("%s\n", GetKeyPressed()? "a" : "b");
+  BeginDrawing();
+  //ClearBackground(RAYWHITE);
+  DrawBG();
+  RunApplication();
+   
   }
-}
+
 
   
