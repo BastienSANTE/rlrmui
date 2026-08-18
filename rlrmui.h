@@ -1,7 +1,8 @@
 #include "raylib.h"
 
-//*** RLRMUI **// Raylib retained-mode UI
-// This is a for-fun project. it is not production-quality code (far from there)
+//*** RLRMUI ***// Raylib retained-mode UI
+// This is a for-fun project. it is not production-quality code
+//(far from there)
 
 /*-------------------------------------------------------o
 |          FORWARD DECLARATIONS AND LIB FUNCTIONS        |$
@@ -11,8 +12,11 @@ o--------------------------------------------------------o$
 /* Rect : Integer rectangle, as opposed to raylib's float Rectangle*/
 typedef struct Rect {
   int x; int y; int w; int h;
-}
+};
 
+// After looking at the code for Luigi(2), I might use bitfields to
+// contain widget properties
+  
 typedef enum Alignment {
   LEFT,
   RIGHT,
@@ -45,6 +49,10 @@ typedef struct Button Button;
 typedef struct ValueBox ValueBox;
 
 // Function prototypes
+
+// General purpose functions
+void AddWidget()
+
 void SetRootFrame(Frame* frame);
 void DrawButton (Button* b);
 void DrawValueBox (ValueBox* b);
@@ -71,9 +79,10 @@ typedef struct Window {
 /* Widget : Base structure of all widgets. */
 typedef struct Widget {
   Frame* parent;
-  Rect bounds;
+  Rect bounds;             // Actual bounds
+  Rect clip;               // Clipping rectangle (usually the parent)
   bool active;
-  void *
+  WidgetState state;
   void (*draw)(Widget *w);
 }
 
@@ -94,6 +103,7 @@ typedef struct Frame {
 //-------------------------------------------------------------------------//
 // Label - Simple text, non-interactable except by code
 typedef struct Label {
+  Widget* w;
   char* text;
   int fontSize;
 }
@@ -110,7 +120,6 @@ typedef struct Button {
 };
 
 void DrawButton (Button* b) {
-  
    b->w.w = MeasureText(b->text, 10); // Calculate width of text at 10px
    b->w.h = 12;                    // Arbitrary for the moment
    DrawText(b->text,
