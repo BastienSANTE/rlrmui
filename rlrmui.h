@@ -1,4 +1,4 @@
-#include "raylib.h"
+#include "include/raylib.h"
 
 //*** RLRMUI ***// Raylib retained-mode UI
 // This is a for-fun project. it is not production-quality code
@@ -16,7 +16,7 @@ typedef struct Rect {
 
 // After looking at the code for Luigi(2), I might use bitfields to
 // contain widget properties
-  
+
 typedef enum Alignment {
   LEFT,
   RIGHT,
@@ -25,7 +25,7 @@ typedef enum Alignment {
   CENTER
 } Alignment;
 
-enum WidgetState {
+typedef enum WidgetState {
   INACTIVE,
   ACTIVE,
   HOVERED,
@@ -33,12 +33,27 @@ enum WidgetState {
   RELEASED
 } WidgetState ;
 
-enum WidgetType {
+typedef enum WidgetType {
   BUTTON = 0,
   LABEL,
-  VALUEBOX,
-  
-}
+  VALUEBOX
+};
+
+
+// Idea : why not treat the UI as a state machine ?
+// The state machine is managed by the window, and transmits events to child widgets
+typedef enum UIState {
+  NONE = 0,
+  HOVER,
+  CLICK,
+  DRAG,
+  SCROLL,
+  RESIZE,
+  KEYPRESS,
+  KEYPRESS_MOD
+  // Probably other states coming
+};
+
 
 
 // Forward declaration of structs
@@ -51,8 +66,8 @@ typedef struct ValueBox ValueBox;
 // Function prototypes
 
 // General purpose functions
-void AddWidget()
-
+void AddWidget();
+void EventLoop (Window* w);
 void SetRootFrame(Frame* frame);
 void DrawButton (Button* b);
 void DrawValueBox (ValueBox* b);
@@ -63,19 +78,57 @@ void SetValue(ValueBox* b, char* text);
 o--------------------------------------------------------o$
  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 
-#ifndef RLRMUI_IMPLEMENTATION
-#define RLRMUI_IMPLEMENTATION
 
+//-------------------------------------------------------------------------//
 /* Window : Base container for all underlying UI
    Contains the root layout struct, which keeps the
    rest of the child elements. Its draw command redraws the entire window.
    Used when resizing, or when significantly modifying the layout. */
 typedef struct Window {
-  Frame* rootFrame;
-
-  void (*setRootFrame)(Frame* f);
+  Frame* rootFrame = NULL;
+  UIState state = NONE;
+  int mouseX; int mouseY;
 };
 
+Window* CreateWindow() {
+  Window* w = (Window*)malloc(sizeof(Window));
+  w->state = NONE;
+  return w;
+}
+
+void SetRootFrame(Window* w, Frame* f){
+  w->rootFrame = f;
+}
+
+void EventLoop(Window* w) {
+  if (!IsWindowFocused()) {
+    w->state = NONE;
+  }
+
+  if (IsMouseButtonPressed(1)) {
+    w->state = CLICK;
+    printf("CLICK\n");
+  }
+
+  if (IsMouseButtonDown(1)) {
+    w->state = CLICK;
+    printf("DRAG\n");
+  }
+
+  if (GetMouseWheelMove()) {
+    w->state = SCROLL;
+    printf("SCROLL\n");
+  }
+
+
+  printf("%d, %d\n", GetMouseX(), GetMouseY()); 
+   if (IsWindowResized()) {
+     w->state = RESIZE;
+     printf("RESIZE\n");
+  }
+}
+
+//-------------------------------------------------------------------------//
 /* Widget : Base structure of all widgets. */
 typedef struct Widget {
   Frame* parent;
@@ -84,9 +137,13 @@ typedef struct Widget {
   bool active;
   WidgetState state;
   void (*draw)(Widget *w);
-}
+};
 
-/* Layout : Contains Widgets, or other Layouts. Stretches based on
+
+
+
+//-------------------------------------------------------------------------//
+/* Frame : Contains Widgets, or other Layouts. Stretches based on
    its alignment (not yet implemented). Layout uses the float rectangle to
 be able to hae precise measurements*/
 typedef struct Frame {
@@ -94,11 +151,23 @@ typedef struct Frame {
   bool root = false;
   Frame* parent = NULL;
   Frame* children = NULL;
+  Widget* widgets = NULL;
 
   // Private members, should not be set directly
   int _pixelW;   // Actual width & height in px
   int _pixelH;
 };
+
+Frame* CreateFrame(int x, int y, int w, int h, bool root) {
+  Frame* f = (Frame*)malloc(sizeof(Frame));
+  f->bounds = (Rectangle){x, y, w, h};
+  f->root = root;
+  return f;
+}
+
+void AddWidget(Frame* f, Widget* w) {
+  f->widgets = w;
+}
 
 //-------------------------------------------------------------------------//
 // Label - Simple text, non-interactable except by code
@@ -106,29 +175,38 @@ typedef struct Label {
   Widget* w;
   char* text;
   int fontSize;
-}
+};
 
 //-------------------------------------------------------------------------//
 /* Button : can be hovered, pressed and held */ 
 typedef struct Button {
   Widget w;
   char* text;
-  int padding;
+  int padding = 5;
 
   // Functions
   void(*draw)(Button* b) = &DrawButton;
 };
 
-void DrawButton (Button* b) {
-   b->w.w = MeasureText(b->text, 10); // Calculate width of text at 10px
-   b->w.h = 12;                    // Arbitrary for the moment
-   DrawText(b->text,
-	    b->w.x + b->padding,
-	    b->w.y + b->padding, 10, BLUE);
+Button* CreateButton(char* text) {
+  Button* b = (Button*)malloc(sizeof(Button));
+  b->text = text;
+  return b;
+}
 
-   DrawRectangleLines(b->w.x, b->w.y,
-		      b->w.x + b->w.w + b->padding, b->w.y + b->padding,
+void DrawButton (Button* b) {
+   b->w.bounds.w = MeasureText(b->text, 10); // Calculate width of text at 10px
+   b->w.bounds.h = 12;                    // Arbitrary for the moment
+   DrawText(b->text,
+	    b->w.bounds.x + b->padding,
+	    b->w.bounds.y + b->padding, 10, BLUE);
+
+   DrawRectangleLines(b->w.bounds.x, b->w.bounds.y,
+		      b->w.bounds.x + b->w.bounds.w + b->padding, b->w.bounds.y + b->padding,
 		      BLUE);
+   printf("Drew button\n");
+   printf("button is at %d, %d, w=%d, h=%d",
+	  b->w.bounds.x, b->w.bounds.y, b->w.bounds.w, b->w.bounds.h);
    return;
 };
 
@@ -147,14 +225,14 @@ typedef struct ValueBox {
 
 void DrawValueBox(ValueBox* b) {
   Vector2 textSize = MeasureTextEx(GetFontDefault(), b->text, b->fontSize, 1);
-  b->w = textSize.x;
-  b->h = textSize.y;                   // Arbitrary for the moment
+  b->w.bounds.w = textSize.x;
+  b->w.bounds.h = textSize.y;                   // Arbitrary for the moment
   DrawText(b->text,
-	   b->x + b->padding,
-	   b->y + b->padding, b->fontSize, BLUE);
+	   b->w.bounds.x + b->padding,
+	   b->w.bounds.y + b->padding, b->fontSize, BLUE);
 
-  DrawRectangleLines(b->x, b->y,
-		     b->x + b->w + b->padding, b->y + b->padding,
+  DrawRectangleLines(b->w.bounds.x, b->w.bounds.y,
+		     b->w.bounds.x + b->w.bounds.w + b->padding, b->w.bounds.y + b->padding,
 		     BLUE);
 }
 
@@ -182,11 +260,6 @@ void AddChild(Frame* f, Frame* c){
 | Window events |
 *---------------*/
 
-void ProcessWindowEvents(){
-  if (IsWindowResized()) {
-    printf("Window Resize\n");
-  }
-  if (IsWindowFocused()) {
-    printf("Window focus\n");
-  }
-}
+// Function prototype to find a widget with mouse position
+
+Widget* FindWidgetByMouse(Window *win);

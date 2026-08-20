@@ -2,49 +2,7 @@
 #include<stdbool.h>
 #include<stdlib.h>
 #include<unistd.h>
-#include "raylib.h"
-#include "window.h"
-
-
-void DrawLayout(Frame* f){
-
-printf("frame %d has dimensions %d, %d, %f, %f, root=%d\n, parent = %#x, children = %#x\n", f->id, f->x, f->y, f->_pixelW, f->_pixelH, f->root, f->parent, f->children);
-  
- if (f->root) {
-    f->x = 0; f->y = 0;
-    f->w = 1.0; f->h = 1.0;
-
-    // Make root frame fill entire screen (this might be optional later)
-    f->_pixelW = f->w * GetScreenWidth();
-    f->_pixelH = f->h * GetScreenHeight();
-
- }
-
- if (f->parent != NULL) {
-    // Make root frame fill defined secition of parent (this might be optional later)
-    f->_pixelW = f->w * f->parent->_pixelW;
-    f->_pixelH = f->h * f->parent->_pixelH;
-    DrawRectangleLines(f->x, f->y, f->_pixelW, f->_pixelH, BLUE);
- }
-  
-  if (f->children != NULL){
-    printf("Descending into cild frame\n");
-    DrawRectangleLines(f->x, f->y, f->_pixelW, f->_pixelH, BLUE);
-    f = f->children;
-    DrawLayout(f);
-
-  }
-  
-  DrawRectangleLines(f->x, f->y, f->_pixelW, f->_pixelH, BLUE);
-}
-
-int RunApplication() {
-  while(!WindowShouldClose()) {
-    ProcessWindowEvents();
-    EndDrawing();
-  }
-  return 0;
-}
+#include "rlrmui.h"
 
 
 int main(void) {
@@ -52,25 +10,29 @@ int main(void) {
   int screenWidth = 500;
   int screenHeight = 400;
 
-  Frame f = {1, 0, 0, screenWidth, screenHeight, true, NULL, NULL};
-  Frame cf = {2, 0, 0, 0.5, 0.5, false, NULL, NULL};
-  Button b = {"Lorem Ipsum", 20, 20, 0, 0, 3};
-  ValueBox vb = {0, 40, 40, 0, 0, 5, 24};
-  AddChild(&f, &cf);
+
+  // UI Definition
+  Window *mainWindow = CreateWindow();
+
+  Frame* f = CreateFrame(0, 0, screenWidth, screenHeight, true);
+  SetRootFrame(mainWindow, f);
   
+  Button* btn = CreateButton("Lorem ipsum");
+  AddWidget(f, (Widget*)btn);
+ 
   SetConfigFlags(FLAG_VSYNC_HINT);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(screenWidth, screenHeight, "layout test");
-
-  int framecount = 0;
-  char* framecountStr;
-
-  BeginDrawing();
-  //ClearBackground(RAYWHITE);
-  DrawBG();
-  RunApplication();
-   
+  
+  while(!WindowShouldClose()) {
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+    DrawButton(btn);
+    EndDrawing();
+    EventLoop(mainWindow);
+  }
+  
   }
 
 
