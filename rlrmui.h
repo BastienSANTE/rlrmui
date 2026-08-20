@@ -66,6 +66,8 @@ typedef struct ValueBox ValueBox;
 // Function prototypes
 
 // General purpose functions
+bool RectContainsPoint(Rect r, int x, int y);
+
 void AddWidget();
 void EventLoop (Window* w);
 void SetRootFrame(Frame* frame);
@@ -73,10 +75,20 @@ void DrawButton (Button* b);
 void DrawValueBox (ValueBox* b);
 void SetValue(ValueBox* b, char* text);
 
+
 /*-------------------------------------------------------o
 |                     IMPLEMENTATION                     |$
 o--------------------------------------------------------o$
  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
+
+//-------------------------------------------------------------------------//
+/* General purpose functions
+   Only slightly related to the UI, but are helpers for cumbersome calculations
+   and boilerplate to speed up code writing */
+bool RectContainsPoint(Rect r, int x, int y) {
+  //Damn perfect fit into 70 chars (why not 80 as default, Emacs ?)
+  return (x > r.x) && (x < r.x + r.w) && (y > r.y) && (y < r.y + r.h);
+}
 
 
 //-------------------------------------------------------------------------//
@@ -101,10 +113,13 @@ void SetRootFrame(Window* w, Frame* f){
 }
 
 void EventLoop(Window* w) {
-  if (!IsWindowFocused()) {
+  if (!IsCursorOnScreen()) {
     w->state = NONE;
+    return;
   }
 
+  w->mouseX = GetMouseX(); w->mouseY = GetMouseY();
+    
   if (IsMouseButtonPressed(1)) {
     w->state = CLICK;
     printf("CLICK\n");
@@ -126,6 +141,20 @@ void EventLoop(Window* w) {
      w->state = RESIZE;
      printf("RESIZE\n");
   }
+}
+
+// Goes through the UI tree to find the corresponding widget
+// TODO : Make Frames into widgets for more compact traversal code
+// Maybe luigi was right about this
+Widget* FindWidgetByMousePosition(Window* w){
+  if (w->rootFrame == NULL) return NULL;
+
+  if(!RectContainsPoint(w->rootFrame.bounds, w->mouseX, w->mouseY)) {
+    return NULL;
+  }
+
+  
+  
 }
 
 //-------------------------------------------------------------------------//
@@ -202,10 +231,10 @@ void DrawButton (Button* b) {
 	    b->w.bounds.y + b->padding, 10, BLUE);
 
    DrawRectangleLines(b->w.bounds.x, b->w.bounds.y,
-		      b->w.bounds.x + b->w.bounds.w + b->padding, b->w.bounds.y + b->padding,
+		      b->w.bounds.x + b->w.bounds.w + b->padding, b->w.bounds.y + b->w.bounds.h + b->padding,
 		      BLUE);
    printf("Drew button\n");
-   printf("button is at %d, %d, w=%d, h=%d",
+   printf("button is at %d, %d, w=%d, h=%d\n",
 	  b->w.bounds.x, b->w.bounds.y, b->w.bounds.w, b->w.bounds.h);
    return;
 };

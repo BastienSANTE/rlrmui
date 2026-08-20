@@ -24,6 +24,11 @@ int main(void) {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(screenWidth, screenHeight, "layout test");
+
+  BeginDrawing();
+    ClearBackground(RAYWHITE);
+    DrawButton(btn);
+    EndDrawing();
   
   while(!WindowShouldClose()) {
     BeginDrawing();
