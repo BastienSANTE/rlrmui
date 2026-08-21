@@ -68,10 +68,18 @@ typedef struct ValueBox ValueBox;
 // General purpose functions
 bool RectContainsPoint(Rect r, int x, int y);
 
+
+// Widget functions
 void AddWidget();
+
+// Input events
 void EventLoop (Window* w);
 void SetRootFrame(Frame* frame);
+
+// Button
 void DrawButton (Button* b);
+
+// Value Box
 void DrawValueBox (ValueBox* b);
 void SetValue(ValueBox* b, char* text);
 
@@ -90,6 +98,28 @@ bool RectContainsPoint(Rect r, int x, int y) {
   return (x > r.x) && (x < r.x + r.w) && (y > r.y) && (y < r.y + r.h);
 }
 
+
+//-------------------------------------------------------------------------//
+/* Widget : Base structure of all widgets. */
+typedef struct Widget {
+  Rect bounds;             // Actual bounds
+  Rect clip;               // Clipping rectangle (usually the parent)
+  bool active;
+  Widget* parent;
+  Widget* children;
+  WidgetState state;
+};
+
+Widget* CreateWidget() {
+  Widget* w = (Widget*)malloc(sizeof(Widget));
+  w->bounds = (Rect){0, 0, 0, 0};
+  w->clip = (Rect){0, 0, 0, 0};
+  return w;
+}
+
+void SetBounds(Widget* widget, int x, int y, int w, int h){
+  widget->bounds = (Rect){x, y, w, h};
+}
 
 //-------------------------------------------------------------------------//
 /* Window : Base container for all underlying UI
@@ -146,37 +176,24 @@ void EventLoop(Window* w) {
 // Goes through the UI tree to find the corresponding widget
 // TODO : Make Frames into widgets for more compact traversal code
 // Maybe luigi was right about this
-Widget* FindWidgetByMousePosition(Window* w){
-  if (w->rootFrame == NULL) return NULL;
+Widget* FindWidgetByMousePosition(Window* win){
+  if (win->rootFrame == NULL) return NULL;
 
-  if(!RectContainsPoint(w->rootFrame.bounds, w->mouseX, w->mouseY)) {
+  Widget* w = (Widget*)win->rootFrame;
+  
+  if(!RectContainsPoint(w->bounds, win->mouseX, win->mouseY)) {
     return NULL;
   }
 
-  
-  
+  return NULL;
 }
-
-//-------------------------------------------------------------------------//
-/* Widget : Base structure of all widgets. */
-typedef struct Widget {
-  Frame* parent;
-  Rect bounds;             // Actual bounds
-  Rect clip;               // Clipping rectangle (usually the parent)
-  bool active;
-  WidgetState state;
-  void (*draw)(Widget *w);
-};
-
-
-
 
 //-------------------------------------------------------------------------//
 /* Frame : Contains Widgets, or other Layouts. Stretches based on
    its alignment (not yet implemented). Layout uses the float rectangle to
 be able to hae precise measurements*/
 typedef struct Frame {
-  Rectangle bounds;
+  Widget* widget;
   bool root = false;
   Frame* parent = NULL;
   Frame* children = NULL;
@@ -189,13 +206,15 @@ typedef struct Frame {
 
 Frame* CreateFrame(int x, int y, int w, int h, bool root) {
   Frame* f = (Frame*)malloc(sizeof(Frame));
-  f->bounds = (Rectangle){x, y, w, h};
+  f->widget = CreateWidget();
+  f->widget->bounds = (Rect){x, y, w, h};
   f->root = root;
   return f;
 }
 
 void AddWidget(Frame* f, Widget* w) {
   f->widgets = w;
+  w->clip = f->widget->bounds;
 }
 
 //-------------------------------------------------------------------------//
@@ -209,7 +228,7 @@ typedef struct Label {
 //-------------------------------------------------------------------------//
 /* Button : can be hovered, pressed and held */ 
 typedef struct Button {
-  Widget w;
+  Widget* widget;
   char* text;
   int padding = 5;
 
@@ -219,23 +238,30 @@ typedef struct Button {
 
 Button* CreateButton(char* text) {
   Button* b = (Button*)malloc(sizeof(Button));
+  b->widget = CreateWidget();
   b->text = text;
   return b;
 }
 
 void DrawButton (Button* b) {
-   b->w.bounds.w = MeasureText(b->text, 10); // Calculate width of text at 10px
-   b->w.bounds.h = 12;                    // Arbitrary for the moment
-   DrawText(b->text,
-	    b->w.bounds.x + b->padding,
-	    b->w.bounds.y + b->padding, 10, BLUE);
+  Widget* w = b->widget;
 
-   DrawRectangleLines(b->w.bounds.x, b->w.bounds.y,
-		      b->w.bounds.x + b->w.bounds.w + b->padding, b->w.bounds.y + b->w.bounds.h + b->padding,
+  w->bounds = (Rect){
+    w->bounds.x,
+    w->bounds.y,
+    MeasureText(b->text, 10),
+    12 };
+   
+   DrawText(b->text,
+	    w->bounds.x + b->padding,
+	    w->bounds.y + b->padding, 10, BLUE);
+
+   DrawRectangleLines(w->bounds.x, w->bounds.y,
+		      w->bounds.x + w->bounds.w + b->padding, w->bounds.y + w->bounds.h + b->padding,
 		      BLUE);
    printf("Drew button\n");
    printf("button is at %d, %d, w=%d, h=%d\n",
-	  b->w.bounds.x, b->w.bounds.y, b->w.bounds.w, b->w.bounds.h);
+	  w->bounds.x, w->bounds.y, w->bounds.w, w->bounds.h);
    return;
 };
 
@@ -283,12 +309,3 @@ void AddChild(Frame* f, Frame* c){
   SetParent(c, f);
   return;
 }
-
-
-/*--------------*
-| Window events |
-*---------------*/
-
-// Function prototype to find a widget with mouse position
-
-Widget* FindWidgetByMouse(Window *win);
