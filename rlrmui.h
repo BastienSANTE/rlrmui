@@ -63,6 +63,10 @@ typedef struct Frame Frame;
 typedef struct Button Button;
 typedef struct ValueBox ValueBox;
 
+// Macros
+#define TOWIDGET(t) (Widget*)t
+
+
 // Function prototypes
 
 // General purpose functions
@@ -119,16 +123,22 @@ typedef struct Widget {
   int (*eventHandler)(Widget* w);
 };
 
-Widget* CreateWidget() {
+void CreateWidget(Widget* widget) {
   Widget* w = (Widget*)malloc(sizeof(Widget));
   printf("Widget allocated, size %d\n", sizeof(Widget));
-  w->bounds = (Rect){0, 0, 0, 0};
-  w->parent = NULL; w->children = NULL;
-  return w;
+  widget->bounds = (Rect){0, 0, 0, 0};
+  widget->parent = NULL;
+  widget->children = NULL;
+  return;
+  
 }
 
-void SetBounds(Widget* widget, int x, int y, int w, int h){
+void SetWidgetBounds(Widget* widget, int x, int y, int w, int h){
   widget->bounds = (Rect){x, y, w, h};
+}
+
+void SetEventHandler(Widget* widget, int (*handler)()){
+  widget->eventHandler = handler;
 }
 
 Widget* SearchPointInChildren(Widget* w, int x, int y){
@@ -153,7 +163,7 @@ Widget* SearchPointInChildren(Widget* w, int x, int y){
    its alignment (not yet implemented). Layout uses the float rectangle to
 be able to hae precise measurements*/
 typedef struct Frame {
-  Widget* widget;
+  Widget widget;
   bool root;
   // Private members, should not be set directly
   int _pixelW;   // Actual width & height in px
@@ -162,16 +172,17 @@ typedef struct Frame {
 
 Frame* CreateFrame(int x, int y, int w, int h, bool root) {
   Frame* f = (Frame*)malloc(sizeof(Frame));
-  f->widget = CreateWidget();
-  f->widget->bounds = (Rect){x, y, w, h};
+  CreateWidget(&f->widget);
+  SetWidgetBounds(&f->widget, x, y, w, h);
   f->root = root;
-  f->widget->eventHandler = &FrameHandleEvents;
+  SetEventHandler(&f->widget, FrameHandleEvents);
+  //f->widget->eventHandler = &FrameHandleEvents;
   return f;
 }
 
 void AddWidget(Frame* frame, Widget* widget) {
-  frame->widget->children = widget;
-  widget->parent = frame->widget;
+  frame->widget.children = widget;
+  widget->parent = (Widget*)frame;
 }
 
 int FrameHandleEvents(Widget* widget){
@@ -186,8 +197,8 @@ int FrameHandleEvents(Widget* widget){
    rest of the child elements. Its draw command redraws the entire window.
    Used when resizing, or when significantly modifying the layout. */
 typedef struct Window {
-  Rect bounds;
   Frame* rootFrame;
+  Rect bounds;
   UIState state;
   int mouseX; int mouseY;
   Widget* focusedWidget;       // Current target of mouse
@@ -264,7 +275,7 @@ void EventLoop(Window* window) {
 Widget* FindWidgetByMousePosition(Window* window){
   if (window->rootFrame == NULL) return NULL;
 
-  Widget* w = window->rootFrame->widget;
+  Widget* w = TOWIDGET(window->rootFrame);
   
   if(!RectContainsPoint(w->bounds, window->mouseX, window->mouseY)) {
     printf("Mouse at %d, %d outside of frame at %d, %d, %d, %d\n",
@@ -298,23 +309,24 @@ typedef struct Label {
 //-------------------------------------------------------------------------//
 /* Button : can be hovered, pressed and held */ 
 typedef struct Button {
-  Widget* widget;
+  Widget widget;
   char* text;
   int padding;
 };
 
 Button* CreateButton(char* text) {
   Button* b = (Button*)malloc(sizeof(Button));
-  b->widget = CreateWidget();
-  
-  b->widget->eventHandler = &ButtonHandleEvents;
+  CreateWidget(&b->widget);
   b->text = text;
-  b->widget->bounds = (Rect){0, 0, MeasureText(b->text, 20), 20 };
+  SetWidgetBounds(&b->widget, 0, 0, MeasureText(b->text, 20), 20 );
+  SetEventHandler(&b->widget, ButtonHandleEvents);
+  printf("Button at %x, %d, %d, %d, %d\n", b, b->widget.bounds.x, b->widget.bounds.y, b->widget.bounds.w, b->widget.bounds.h);
+
   return b;
 }
 
 void DrawButton (Button* b) {
-  Widget* w = b->widget;
+  Widget* w = &b->widget;
 
   b->padding = 5;
   
@@ -331,6 +343,8 @@ void DrawButton (Button* b) {
 		      w->bounds.y + w->bounds.h + b->padding * 2,
 		      BLUE);
 
+  //printf("Button at %x, %d, %d, %d, %d\n", &w, w->bounds.x, w->bounds.y, w->bounds.w, w->bounds.h);
+
    EndScissorMode();
   
   return;
@@ -339,7 +353,7 @@ void DrawButton (Button* b) {
 int ButtonHandleEvents(Widget* w){
   Button* b = (Button*)w;  // Will it work ?
   
-  switch (b->widget->state) {
+  switch (b->widget.state) {
   case HOVERED:
     b->padding = 3;
     b->text = "A";

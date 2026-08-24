@@ -21,8 +21,8 @@ int main(void) {
   Frame* f = CreateFrame(0, 0, screenWidth, screenHeight, true);
   SetRootFrame(mainWindow, f);
   
-  Button* btn = CreateButton("Options & Properties");
-  AddWidget(f, btn->widget);
+  Button btn = CreateButton("Options & Properties");
+  AddWidget(f, (Widget*)btn);
  
  
   while(!WindowShouldClose()) {
