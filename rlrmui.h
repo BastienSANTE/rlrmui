@@ -62,6 +62,7 @@ typedef struct Window Window;
 typedef struct Frame Frame;
 typedef struct Button Button;
 typedef struct ValueBox ValueBox;
+typedef struct Renderer;
 
 // Macros
 #define TOWIDGET(t) (Widget*)t
@@ -108,6 +109,10 @@ bool RectContainsPoint(Rect r, int x, int y) {
 }
 
 
+typedef struct Renderer {
+  RenderTexture2D render;
+};
+
 //-------------------------------------------------------------------------//
 /* Widget : Base structure of all widgets. */
 typedef struct Widget {
@@ -130,7 +135,6 @@ void CreateWidget(Widget* widget) {
   widget->parent = NULL;
   widget->children = NULL;
   return;
-  
 }
 
 void SetWidgetBounds(Widget* widget, int x, int y, int w, int h){
@@ -203,6 +207,8 @@ typedef struct Window {
   int mouseX; int mouseY;
   Widget* focusedWidget;       // Current target of mouse
   Widget* lastFocusedWidget;   // For unfocus events
+
+  RenderTexture2D texture;
 };
 
 Window* CreateWindow(int w, int h) {
@@ -211,6 +217,8 @@ Window* CreateWindow(int w, int h) {
   window->state = NONE;
   window->focusedWidget = NULL;
   window->lastFocusedWidget = NULL;
+
+  window->texture = LoadRenderTexture(w, h);
   return window;
 }
 

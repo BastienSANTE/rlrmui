@@ -1,4 +1,7 @@
 # Goals
 
-- [x] Implement UI traversal
-- [ ] Implement basic hover & click reaction
+- [x] UI traversal
+- [x] basic hover & click reaction
+- [ ] texture-based rendering
+- [ ] Layout modes and alignment types
+
