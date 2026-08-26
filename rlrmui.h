@@ -1,5 +1,7 @@
 #include "include/raylib.h"
 
+#include "theme.h"
+
 //*** RLRMUI ***// Raylib retained-mode UI
 // This is a for-fun project. it is not production-quality code
 //(far from there)
@@ -75,7 +77,7 @@ bool RectContainsPoint(Rect r, int x, int y);
 
 
 // Widget functions
-void AddWidget();
+void AddWidget(Frame* frame, Widget* widget);
 
 // Input events
 void EventLoop (Window* w);
@@ -122,10 +124,15 @@ typedef struct Widget {
   Widget* parent;
   Widget* children;
   WidgetState state;
+  WidgetState lastState;
   Alignment alignment;
 
   //Event handling
   int (*eventHandler)(Widget* w);
+  int (*onClick)(Widget* w);
+  int (*onHover)(Widget* w);
+  int (*onUnhover)(Widget*);
+  int (*onKeyboard)(Widget* w);
 };
 
 void CreateWidget(Widget* widget) {
@@ -141,8 +148,12 @@ void SetWidgetBounds(Widget* widget, int x, int y, int w, int h){
   widget->bounds = (Rect){x, y, w, h};
 }
 
-void SetEventHandler(Widget* widget, int (*handler)()){
+void SetEventHandler(Widget* widget, int (*handler)(Widget* w)){
   widget->eventHandler = handler;
+}
+
+void SetOnClick(Widget* widget, int(*callback)(Widget* w)){
+  widget->onClick = callback;
 }
 
 Widget* SearchPointInChildren(Widget* w, int x, int y){
@@ -256,6 +267,7 @@ void EventLoop(Window* window) {
 
   if (IsMouseButtonDown(1)) {
     window->state = CLICK;
+    window->focusedWidget->onClick(window->focusedWidget);
     printf("DRAG\n");
   }
 
@@ -327,7 +339,8 @@ Button* CreateButton(char* text) {
   CreateWidget(&b->widget);
   b->text = text;
   SetWidgetBounds(&b->widget, 0, 0, MeasureText(b->text, 20), 20 );
-  SetEventHandler(&b->widget, ButtonHandleEvents);
+  //SetEventHandler(&b->widget, ButtonHandleEvents);
+  SetOnClick(&b->widget, ButtonHandleEvents);
   printf("Button at %x, %d, %d, %d, %d\n", b, b->widget.bounds.x, b->widget.bounds.y, b->widget.bounds.w, b->widget.bounds.h);
 
   return b;

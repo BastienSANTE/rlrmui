@@ -21,7 +21,7 @@ int main(void) {
   Frame* f = CreateFrame(0, 0, screenWidth, screenHeight, true);
   SetRootFrame(mainWindow, f);
   
-  Button btn = CreateButton("Options & Properties");
+  Button* btn = CreateButton("Options & Properties");
   AddWidget(f, (Widget*)btn);
  
  
@@ -33,6 +33,5 @@ int main(void) {
     DEBUG_DrawFocus(mainWindow);
     EndDrawing();
     EventLoop(mainWindow);
-  }
-  
-  }
+  }  
+}

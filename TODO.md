@@ -4,4 +4,5 @@
 - [x] basic hover & click reaction
 - [ ] texture-based rendering
 - [ ] Layout modes and alignment types
+- [ ] Event types 
 
