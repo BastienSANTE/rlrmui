@@ -180,6 +180,7 @@ be able to hae precise measurements*/
 typedef struct Frame {
   Widget widget;
   bool root;
+  Alignment alignment;
   // Private members, should not be set directly
   int _pixelW;   // Actual width & height in px
   int _pixelH;
