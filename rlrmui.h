@@ -393,4 +393,13 @@ int ButtonHandleEvents(Widget* w){
 }
 
 //-------------------------------------------------------------------------//
-// Value Box - cannot be interacted with except by code yet
+/* Multiline Text Field : Enables editing a string or multiple inside
+   a rectangle.*/
+typedef struct TextBox_Multiline {
+  char* text;
+  int cursorX; int cursorY;
+
+  // Visual
+  char** lines[10];
+  
+};
