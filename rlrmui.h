@@ -16,6 +16,11 @@ typedef struct Rect {
   int x; int y; int w; int h;
 } Rect;
 
+/* Float Rect : rectangle of 4*/
+typedef struct FloatRect {
+  float x; float y; float w; float h;
+}
+
 // After looking at the code for Luigi(2), I might use bitfields to
 // contain widget properties
 
@@ -393,13 +398,31 @@ int ButtonHandleEvents(Widget* w){
 }
 
 //-------------------------------------------------------------------------//
+/* Text Line : used inside of multiline text field*/
+
+//-------------------------------------------------------------------------//
 /* Multiline Text Field : Enables editing a string or multiple inside
    a rectangle.*/
-typedef struct TextBox_Multiline {
+typedef struct TextBox {
+  Widget widget;
   char* text;
   int cursorX; int cursorY;
 
   // Visual
   char** lines[10];
-  
 };
+
+TextBox* CreateTextBoxML (char* text){
+  TextBox* textbox = (TextBox*)malloc(sizeof(TextBox));
+  SetWidgetBounds
+  textbox->text = text;
+}
+
+void DrawTextBox(TextBox* textbox) {
+
+  // Get the width of all text at once
+  int totalTextWidth = MeasureText(textbox->text, 12);
+}
+
+void TextBox_SetText(TextBox* textBox) {
+}
