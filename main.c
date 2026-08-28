@@ -23,6 +23,8 @@ int main(void) {
   
   Button* btn = CreateButton("Options & Properties");
   AddWidget(f, (Widget*)btn);
+
+  TextBox* tb = CreateTextBox("Lorem ipsum dolor sit amet, consectetur adpiscing elit", 0, 40, 200, 200);
  
  
   while(!WindowShouldClose()) {

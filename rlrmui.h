@@ -19,7 +19,12 @@ typedef struct Rect {
 /* Float Rect : rectangle of 4*/
 typedef struct FloatRect {
   float x; float y; float w; float h;
-}
+} FloatRect;
+
+typedef struct TextLine {
+  char* text;
+  Rect bounds;
+} TextLine;
 
 // After looking at the code for Luigi(2), I might use bitfields to
 // contain widget properties
@@ -69,7 +74,8 @@ typedef struct Window Window;
 typedef struct Frame Frame;
 typedef struct Button Button;
 typedef struct ValueBox ValueBox;
-typedef struct Renderer;
+typedef struct TextBox TextBox;
+typedef struct Renderer Renderer;
 
 // Macros
 #define TOWIDGET(t) (Widget*)t
@@ -114,11 +120,6 @@ bool RectContainsPoint(Rect r, int x, int y) {
   //Damn perfect fit into 70 chars (why not 80 as default, Emacs ?)
   return (x > r.x) && (x < r.x + r.w) && (y > r.y) && (y < r.y + r.h);
 }
-
-
-typedef struct Renderer {
-  RenderTexture2D render;
-};
 
 //-------------------------------------------------------------------------//
 /* Widget : Base structure of all widgets. */
@@ -409,20 +410,25 @@ typedef struct TextBox {
   int cursorX; int cursorY;
 
   // Visual
-  char** lines[10];
+  TextLine* lines;
 };
 
-TextBox* CreateTextBoxML (char* text){
+TextBox* CreateTextBox (char* text, int x, int y, int w, int h){
   TextBox* textbox = (TextBox*)malloc(sizeof(TextBox));
-  SetWidgetBounds
+  SetWidgetBounds((Widget*)textbox, x, y, w, h);
   textbox->text = text;
+
+  int initialLineCount = MeasureText(text, 12) / w;
+  textbox->lines = (TextLine *)malloc(initialLineCount * sizeof(TextLine));
+  printf("Allocated space for %d lines\n", initialLineCount);
+  return textbox;  
 }
 
 void DrawTextBox(TextBox* textbox) {
-
   // Get the width of all text at once
   int totalTextWidth = MeasureText(textbox->text, 12);
+  DrawText
 }
 
-void TextBox_SetText(TextBox* textBox) {
-}
+void TextBox_SetText(TextBox *textBox) {}
+
