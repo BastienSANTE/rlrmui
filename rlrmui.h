@@ -1,5 +1,5 @@
 #include "include/raylib.h"
-
+#include <string.h>
 #include "theme.h"
 
 //*** RLRMUI ***// Raylib retained-mode UI
@@ -408,27 +408,115 @@ typedef struct TextBox {
   Widget widget;
   char* text;
   int cursorX; int cursorY;
-
+  int offsetX; int offsetY;
   // Visual
+  // Only add lines that are visible on the screen,
+  // lest tiny textboxes occupy all of memory.
+  // 100 lines to test, making it dynamic after
   TextLine* lines;
+  int _lineCount;
 };
 
 TextBox* CreateTextBox (char* text, int x, int y, int w, int h){
   TextBox* textbox = (TextBox*)malloc(sizeof(TextBox));
   SetWidgetBounds((Widget*)textbox, x, y, w, h);
   textbox->text = text;
+  printf("Copied text to textbox\n");
 
   int initialLineCount = MeasureText(text, 12) / w;
-  textbox->lines = (TextLine *)malloc(initialLineCount * sizeof(TextLine));
-  printf("Allocated space for %d lines\n", initialLineCount);
+  textbox->lines = malloc(initialLineCount * sizeof(TextLine));
   return textbox;  
 }
 
 void DrawTextBox(TextBox* textbox) {
+  printf("Entering draw\n");
+  Widget* w = &textbox->widget;
+
+  printf("Casted\n");
+  
   // Get the width of all text at once
-  int totalTextWidth = MeasureText(textbox->text, 12);
-  DrawText
+  //int totalTextWidth = MeasureText(textbox->text, 12);
+
+  for(int i = 0; i < textbox->_lineCount; i++){
+    printf("Line %d has string %s\n", i, textbox->lines[i].text);
+    DrawText(textbox->lines[i].text, 100, i * 12, 12, RED);
+  }
 }
 
-void TextBox_SetText(TextBox *textBox) {}
+void TextBox_SetText(TextBox *textBox) {
+  
+}
+
+void TextBox_Resize(TextBox* textbox, int w, int h){
+  textbox->widget.bounds.w = w;
+  textbox->widget.bounds.h = h;
+  textbox->_lineCount = 0;
+
+  //Estimate text length
+  int textLength = TextLength(textbox->text); //Raylib function
+  int totalTextWidth = MeasureText(textbox->text, 12);
+  int estimatedLineCount = (int)(totalTextWidth / w) + 1;
+
+  //Add 1 line to the estimation for each newline
+  for (int i = 0; i < textLength; i++) {
+    if (textbox->text[i] == '\n') { estimatedLineCount++; }
+  }
+  
+  printf("Estimating %d lines for resize\n", estimatedLineCount);
+
+  //free(textbox->lines);
+  textbox->lines = realloc(textbox->lines, estimatedLineCount * sizeof(TextLine));
+  
+  Font font = GetFontDefault(); //Will be replaced after
+
+  int currentLine = 0;
+  int lineStart = 0;
+  int lineEnd = 0;
+
+  float currentGlyphWidth = 0;
+  float totalLineWidth = 0;
+
+  // Almost copied from raylib example
+  for (int i = 0; i < textLength; i++){
+    //printf("Current byte %d\n", i);
+    int codepointByteCount = 0;
+
+    // Gets UTF8 codepoints instead of simply bytes.
+    int codepoint = GetCodepoint(&textbox->text[i], &codepointByteCount);
+    //printf("Got codepoint %d, is %c\n", codepoint, codepoint);
+    int glyphIndex = GetGlyphIndex(font, codepoint);
+    //printf("Got index %d\n", index);
+
+    // We are advancing more than 1 byte at a time if we get UTF-8 text.
+    // Since the default font is limited, replace invalid codepoints with
+    // "?" and keep advancing 1 byte at a time.
+    if (codepoint == 0x3f) codepointByteCount = 1;
+    i += (codepointByteCount - 1); // i will advance by itself in next iter, dont accumulate offsets.
+
+    currentGlyphWidth = GetGlyphAtlasRec(GetFontDefault(), codepoint).width;
+    //printf("Glyph width is %f\n", currentGlyphWidth);
+    totalLineWidth += currentGlyphWidth;
+
+    //printf("Total line length is %f\n", totalLineWidth);
+
+    // Follow line
+    lineEnd = i;
+
+    if (totalLineWidth >= textbox->widget.bounds.w || codepoint == '\n' || codepoint == 0) {
+      printf("line is %f pixels wide\n", totalLineWidth);
+      textbox->lines[currentLine].text = calloc((lineEnd - lineStart),  sizeof(char));
+      textbox->lines[currentLine].text = strncpy(textbox->lines[currentLine].text, textbox->text + lineStart, (lineEnd - lineStart));
+
+      // Set last char of text to null
+      textbox->lines[currentLine].text[lineEnd - lineStart] = '\0';
+      currentLine++;
+      textbox->_lineCount++;
+      lineStart = (codepoint == '\n' ? lineEnd + 1 : lineEnd);
+
+      totalLineWidth = 0;
+    } else {
+      
+    }
+  }
+}
 

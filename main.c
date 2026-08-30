@@ -14,6 +14,8 @@ int main(void) {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   
   InitWindow(screenWidth, screenHeight, "layout test");
+
+  SetTargetFPS(1);
   
   // UI Definition
   Window *mainWindow = CreateWindow(screenWidth, screenHeight);
@@ -24,16 +26,18 @@ int main(void) {
   Button* btn = CreateButton("Options & Properties");
   AddWidget(f, (Widget*)btn);
 
-  TextBox* tb = CreateTextBox("Lorem ipsum dolor sit amet, consectetur adpiscing elit", 0, 40, 200, 200);
- 
+  TextBox* tb = CreateTextBox("Lorem ipsum\n dolor\n sit amet, consectetur", 40, 40, 200, 200);
+
+  int textboxW = 20; int textboxH = 300;
  
   while(!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    DrawButton(btn);
-    
+    //DrawButton(btn);
+    TextBox_Resize(tb, textboxW++, textboxH++);
+    DrawTextBox(tb);
     DEBUG_DrawFocus(mainWindow);
     EndDrawing();
     EventLoop(mainWindow);
-  }  
+  }
 }
