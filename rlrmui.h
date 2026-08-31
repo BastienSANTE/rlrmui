@@ -509,14 +509,15 @@ void TextBox_Resize(TextBox* textbox, int w, int h){
 
       // Set last char of text to null
       textbox->lines[currentLine].text[lineEnd - lineStart] = '\0';
-      currentLine++;
-      textbox->_lineCount++;
       lineStart = (codepoint == '\n' ? lineEnd + 1 : lineEnd);
 
       totalLineWidth = 0;
     } else {
-      
+      lineStart = lineEnd; lineEnd = textLength;
     }
+    
+    textbox->lines[currentLine].text[lineEnd - lineStart] = '\0';
+    currentLine++; textbox->_lineCount++;
   }
 }
 
