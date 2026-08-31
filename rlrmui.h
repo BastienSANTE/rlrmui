@@ -66,6 +66,8 @@ typedef enum UIState {
   // Probably other states coming
 } UIState;
 
+// Load better font than the default one
+Font defaultFont;
 
 
 // Forward declaration of structs
@@ -362,9 +364,9 @@ void DrawButton (Button* b) {
 		   w->parent->bounds.y,
 		   w->parent->bounds.w,
 		   w->parent->bounds.h);
-  DrawText(b->text,
-	    w->bounds.x + b->padding,
-	    w->bounds.y + b->padding, 20, BLUE);
+  DrawTextEx(defaultFont, b->text,
+	     (Vector2){w->bounds.x + b->padding,
+      w->bounds.y + b->padding}, 12, 1, BLUE);
 
   DrawRectangleLines(w->bounds.x, w->bounds.y,
 		      w->bounds.x + w->bounds.w + b->padding * 2,
@@ -447,6 +449,10 @@ void TextBox_SetText(TextBox *textBox) {
   
 }
 
+void TextBox_Draw(TextBox* textBox) {
+  
+}
+
 void TextBox_Resize(TextBox* textbox, int w, int h){
   textbox->widget.bounds.w = w;
   textbox->widget.bounds.h = h;
@@ -466,8 +472,7 @@ void TextBox_Resize(TextBox* textbox, int w, int h){
 
   //free(textbox->lines);
   textbox->lines = realloc(textbox->lines, estimatedLineCount * sizeof(TextLine));
-  
-  Font font = GetFontDefault(); //Will be replaced after
+
 
   int currentLine = 0;
   int lineStart = 0;
@@ -484,7 +489,7 @@ void TextBox_Resize(TextBox* textbox, int w, int h){
     // Gets UTF8 codepoints instead of simply bytes.
     int codepoint = GetCodepoint(&textbox->text[i], &codepointByteCount);
     //printf("Got codepoint %d, is %c\n", codepoint, codepoint);
-    int glyphIndex = GetGlyphIndex(font, codepoint);
+    int glyphIndex = GetGlyphIndex(defaultFont, codepoint);
     //printf("Got index %d\n", index);
 
     // We are advancing more than 1 byte at a time if we get UTF-8 text.
@@ -493,7 +498,7 @@ void TextBox_Resize(TextBox* textbox, int w, int h){
     if (codepoint == 0x3f) codepointByteCount = 1;
     i += (codepointByteCount - 1); // i will advance by itself in next iter, dont accumulate offsets.
 
-    currentGlyphWidth = GetGlyphAtlasRec(GetFontDefault(), codepoint).width;
+    currentGlyphWidth = GetGlyphAtlasRec(defaultFont, codepoint).width;
     //printf("Glyph width is %f\n", currentGlyphWidth);
     totalLineWidth += currentGlyphWidth;
 

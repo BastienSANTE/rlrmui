@@ -15,6 +15,8 @@ int main(void) {
   
   InitWindow(screenWidth, screenHeight, "layout test");
 
+  defaultFont = LoadFontEx("UnisonTerm.ttf", 12, 0, 1000);
+  
   SetTargetFPS(1);
   
   // UI Definition
@@ -33,9 +35,9 @@ int main(void) {
   while(!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    //DrawButton(btn);
-    TextBox_Resize(tb, textboxW++, textboxH++);
-    DrawTextBox(tb);
+    DrawButton(btn);
+    //TextBox_Resize(tb, textboxW++, textboxH++);
+    //DrawTextBox(tb);
     DEBUG_DrawFocus(mainWindow);
     EndDrawing();
     EventLoop(mainWindow);
