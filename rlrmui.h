@@ -405,14 +405,72 @@ int ButtonHandleEvents(Widget* w){
    piece does not contain text, but points to a part of a text buffer
    bounded by start and end.*/
 typedef struct TextPiece {
-  char* sourceBuffer;
+  char* source;
   int start;
-  int end;
+  int length;
+  TextPiece* next;
 } TextPiece;
 
-typedef struct PieceTable {
+typedef struct PieceChain {
+  char* baseBuffer;
+  char* addBuffer;
   TextPiece* pieces;
-} PieceTable;
+  int pieceCount;
+  int lastAddLocation;
+} PieceChain;
+
+PieceChain* CreatePieceChain()
+
+
+char CharacterAtPosition(PieceChain* pc, int x) {
+
+  int totalLength = 0; // Total length of traversed string
+  char c = 0;           // Character we will return
+  
+  for (p = pc[0]; p->next != NULL; p++){ // Traverse piece chain
+
+    if (totalLength + p->length >= x) {
+      c = p->source[x - start]; // Get character in right buffer
+    } else {
+      c = 0;
+    }
+  }
+
+  return c;
+}
+
+void PieceChain_Delete{PieceChain* pc, int start, int end} {
+
+}
+
+void PieceChain_Insert{PieceChain* pc, char* text, int start} {
+  TextPiece* tp = malloc(sizeof(TextPiece));
+  tp->source = pc->addBuffer;
+  tp->start = start;
+
+  // Does copying the string go out of bounds
+  int len = strlen(text);
+  if(pc->lastAddLocation + len > (sizeof(pc->addBuffer))) {
+    pc->addBuffer = realloc(pc->addBuffer, sizeof(pc->addBuffer) + len);
+  }
+
+  strncpy(tp->source + pc->lastAddLocation, text, len);
+  
+  pc->pieceCount++;
+  pc->pieces = realloc(pc->pieces, pc->pieceCount * sizeof(TextPiece*));
+  pc[pieceCount - 1] = tp;
+  
+
+}
+
+void PrintPieceChain(PieceChain* pc) {
+  
+  for (p = pc[0]; p->next != NULL; p++) {
+    char* buf = malloc((p->length + 1) * sizeof(char));
+    memcpy(buf, p->source + start, p->length);
+    printf("%s" buf);
+  }
+}
 
 //-------------------------------------------------------------------------//
 /* Text Box : Enables editing a string or multiple inside
@@ -421,10 +479,10 @@ typedef struct PieceTable {
 
 typedef struct TextBox {
   Widget widget;
-  char* text;
+  PieceChain pc;
   int cursorX; int cursorY;
   int offsetX; int offsetY;
-  TextLine* lines;
+  PieceTable* pt;
   int _lineCount;
 
   bool readOnly;
@@ -434,7 +492,9 @@ typedef struct TextBox {
 TextBox* CreateTextBox (char* text, int x, int y, int w, int h, bool ro, bool wl){
   TextBox* textbox = (TextBox*)malloc(sizeof(TextBox));
   SetWidgetBounds((Widget*)textbox, x, y, w, h);
-  textbox->text = text;
+
+  //Copy original text to buffer
+  textbox->pc.baseBuffer = strdup(text);
 
   textbox->readOnly = ro;
   textbox->wrapLines = wl;

@@ -30,8 +30,8 @@ int main(void) {
 
   TextBox* tb = CreateTextBox("Lorem ipsum\n dolor\n sit amet, consectetur", 40, 40, 200, 200);
 
-  int textboxW = 20; int textboxH = 300;
- 
+  int textboxW = 50; int textboxH = 300;
+  /*
   while(!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -41,5 +41,7 @@ int main(void) {
     DEBUG_DrawFocus(mainWindow);
     EndDrawing();
     EventLoop(mainWindow);
-  }
+    }*/
+
+  
 }
