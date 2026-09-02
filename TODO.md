@@ -8,6 +8,7 @@
 
 - [ ] Widget types
   - [ ] Textbox (probably the hardest)
+	- [ ] Piece table impl
   - [ ] ValueBox
   - [ ] Scrolling view
   - [ ] Menu

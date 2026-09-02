@@ -401,11 +401,24 @@ int ButtonHandleEvents(Widget* w){
 }
 
 //-------------------------------------------------------------------------//
-/* Text Line : used inside of multiline text field*/
+/* Text Piece : used inside of piece tables for multiline text editing. The
+   piece does not contain text, but points to a part of a text buffer
+   bounded by start and end.*/
+typedef struct TextPiece {
+  char* sourceBuffer;
+  int start;
+  int end;
+} TextPiece;
+
+typedef struct PieceTable {
+  TextPiece* pieces;
+} PieceTable;
 
 //-------------------------------------------------------------------------//
 /* Text Box : Enables editing a string or multiple inside
    a rectangle.*/
+
+
 typedef struct TextBox {
   Widget widget;
   char* text;
