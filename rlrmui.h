@@ -85,6 +85,9 @@ typedef struct PieceChain PieceChain;
 // Macros
 #define TOWIDGET(t) (Widget*)t
 
+// Print errors;
+#define ERROR(...) fprintf(stderr, __VA_ARGS__);
+
 
 // Function prototypes
 
@@ -411,47 +414,84 @@ typedef struct TextPiece {
   char* source;
   int start;
   int length;
+  TextPiece* prev;
   TextPiece* next;
 };
 
 typedef struct PieceChain {
+  TextPiece* head;
+  TextPiece* tail;
   char* baseBuffer;
   char* addBuffer;
-  TextPiece* pieces;
   int pieceCount;
   int lastAddLocation;
 };
 
-
-char CharacterAtPosition(PieceChain* pc, int x) {
-
-  int totalLength = 0; // Total length of traversed string
-  char c = 0;          // Character we will return
+int AbsPieceStart(PieceChain* pc, TextPiece* target) {
+  int totalLength = 0;
   
-  for (TextPiece* p = pc->pieces; p->next != NULL; p++){ // Traverse piece chain
-    
-    if (totalLength + p->length >= x) {
-      c = p->source[x - p->start]; // Get character in right buffer
+  for (TextPiece* tp = pc->head; tp->next != NULL; tp = tp->next) { // Traverse piece chain  
+    if (tp == target) {
+      return totalLength;
     } else {
-      c = 0;
+      totalLength += tp->length;
+  }
+
+  ERROR("Invalid TextPiece / Piece Chain combination\n");
+  return 0; 
+  }
+}
+
+TextPiece* PieceFromPosition(PieceChain* pc, int pos) {
+  int totalLength = 0; // Total length of traversed string
+  
+  for (TextPiece* tp = pc->head; tp->next != NULL; tp = tp->next){ // Traverse piece chain
+    
+    if (totalLength + tp->length >= pos) {
+      return tp; // Get character in right buffer
     }
   }
 
-  return c;
+  ERROR("Invalid TextPiece position\n");
+  return NULL;
 }
 
+char CharacterAtPosition(PieceChain* pc, int pos) {
+  int totalLength = 0; // Total length of traversed string
+  char c = 0;           // Character we will return
+  
+  for (TextPiece* tp = pc->head; tp->next != NULL; tp = tp->next){ // Traverse piece chain
+    
+    if (totalLength + tp->length >= pos) {
+      c = *(tp->source + pos - tp->start);
+      return c; // Get character in right buffer
+    } else {
+      totalLength += tp->length;
+    }
+  }
+
+  ERROR("Invalid character position\n");
+  return 0;
+}
+
+
+/*Deletes a span from the "final text". This function calculates
+ the necessary edits to the piece chain*/
 void PieceChain_Delete(PieceChain* pc, int start, int end) {
-
+  
+  
 }
 
-void PieceChain_Insert(PieceChain* pc, char* text) {
+void PieceChain_Insert(PieceChain* pc, char* text, int pos) {
+
+  // First, create new text piece;
   TextPiece* tp = malloc(sizeof(TextPiece));
   printf("Allocated text piece at %x\n" ,&tp);
   tp->source = pc->addBuffer;
   tp->start = pc->lastAddLocation;
   tp->next = NULL;
-
-  // Does copying the string go out of bounds
+  
+  // Copy new text into correct buffer
   int len = strlen(text);
   printf("string is %d long\n", len);
   if(pc->lastAddLocation + len > (sizeof(pc->addBuffer))) {
@@ -463,15 +503,35 @@ void PieceChain_Insert(PieceChain* pc, char* text) {
   pc->lastAddLocation += len;
   
   pc->pieceCount++;
-  printf("There are %d pieces in the chain\n");
-  pc->pieces = realloc(pc->pieces, pc->pieceCount * sizeof(TextPiece*));
-  pc->pieces[pc->pieceCount - 1] = *tp;
-	 //pc->pieces[pc->pieceCount - 2].next = tp;
+  
+  // In which piece does insert begin ?
+  TextPiece* startPiece = PieceFromPosition(pc, pos);
+
+  // Calculate character offset from beginning of span
+  int insOffset = pos - AbsPieceStart(pc, startPiece);
+  printf("Split at char %d of text piece, %s\n", insOffset);
+
+
+  
+  // Split last text piece to insert new text
+  startPiece->length -= (startPiece->length - insOffset);
+  printf("Start piece shrunk to %d\n", startPiece->length);
+
+  // Did the 2 parts originate in the same buffer ?
+  // If so, make new TextPiece with remained of original
+  // piece after insertion point
+  /*if(startPiece->next !=  NULL) {
+    
+    }*/
+
+  pc->head = realloc(pc->head, pc->pieceCount * sizeof(TextPiece*));
+  pc->head[pc->pieceCount - 1] = *tp;
+	 //pc->head[pc->pieceCount - 2].next = tp;
 
 }
 
 void PrintPieceChain(PieceChain* pc) {
-  for (TextPiece* p = pc->pieces; p->next != NULL; p++) {
+  for (TextPiece* p = pc->head; p->next != NULL; p++) {
     char* buf = malloc((p->length + 1) * sizeof(char));
     memcpy(buf, p->source + p->start, p->length);
     printf("%s ", buf);
@@ -485,11 +545,21 @@ PieceChain* CreatePieceChain(char* text) {
   PieceChain* pc = malloc(sizeof(PieceChain));
   pc->baseBuffer = calloc(1, strlen(text));
   pc->addBuffer = calloc(1, 512);
+  pc->pieceCount = 0;
+
+  // Fill read-only base buffer
   strncpy(pc->baseBuffer, text, strlen(text));
 
+  // Create head and tail pieces to delimit array, then set their
+  // members to impossible values
+  pc->head = malloc(sizeof(TextPiece));
+  pc->tail = malloc(sizeof(TextPiece));
+  pc->head->prev = NULL; pc->tail->next = NULL;
+  pc->head->start = -1; pc->tail->start = -1;
+  pc->head->length = -1; pc->tail->length = -1;
+  
   printf("%s\n", pc->baseBuffer);
-
-  PieceChain_Insert(pc, text);
+  PieceChain_Insert(pc, text, 0);
   return pc;
 }
 
@@ -497,7 +567,7 @@ PieceChain* CreatePieceChain(char* text) {
 /* Text Box : Enables editing a string or multiple inside
    a rectangle.*/
 
-
+/*
 typedef struct TextBox {
   Widget widget;
   PieceChain pc;
@@ -529,4 +599,4 @@ void TextBox_SetText(TextBox *textBox) {
 void TextBox_Draw(TextBox* textBox) {
   
 }
-
+*/
