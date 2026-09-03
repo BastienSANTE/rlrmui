@@ -7,7 +7,7 @@
 
 int main(void) {
 
-  int screenWidth = 500;
+  /*int screenWidth = 500;
   int screenHeight = 400;
 
   SetConfigFlags(FLAG_VSYNC_HINT);
@@ -31,7 +31,7 @@ int main(void) {
   TextBox* tb = CreateTextBox("Lorem ipsum\n dolor\n sit amet, consectetur", 40, 40, 200, 200);
 
   int textboxW = 50; int textboxH = 300;
-  /*
+  
   while(!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -43,5 +43,13 @@ int main(void) {
     EventLoop(mainWindow);
     }*/
 
+  PieceChain* pc = CreatePieceChain("Lorem ipsum dolor sit amet");
+  PieceChain_Insert(pc, "Addition");
+  
+  //printf("Character at position 0 : %c\n", CharacterAtPosition(pc, 0));
+
+  printf("%s\n", pc->addBuffer);
+  
+  //PrintPieceChain(pc);
   
 }

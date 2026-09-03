@@ -79,6 +79,9 @@ typedef struct ValueBox ValueBox;
 typedef struct TextBox TextBox;
 typedef struct Renderer Renderer;
 
+typedef struct TextPiece TextPiece;
+typedef struct PieceChain PieceChain;
+
 // Macros
 #define TOWIDGET(t) (Widget*)t
 
@@ -409,7 +412,7 @@ typedef struct TextPiece {
   int start;
   int length;
   TextPiece* next;
-} TextPiece;
+};
 
 typedef struct PieceChain {
   char* baseBuffer;
@@ -417,20 +420,18 @@ typedef struct PieceChain {
   TextPiece* pieces;
   int pieceCount;
   int lastAddLocation;
-} PieceChain;
-
-PieceChain* CreatePieceChain()
+};
 
 
 char CharacterAtPosition(PieceChain* pc, int x) {
 
   int totalLength = 0; // Total length of traversed string
-  char c = 0;           // Character we will return
+  char c = 0;          // Character we will return
   
-  for (p = pc[0]; p->next != NULL; p++){ // Traverse piece chain
-
+  for (TextPiece* p = pc->pieces; p->next != NULL; p++){ // Traverse piece chain
+    
     if (totalLength + p->length >= x) {
-      c = p->source[x - start]; // Get character in right buffer
+      c = p->source[x - p->start]; // Get character in right buffer
     } else {
       c = 0;
     }
@@ -439,37 +440,57 @@ char CharacterAtPosition(PieceChain* pc, int x) {
   return c;
 }
 
-void PieceChain_Delete{PieceChain* pc, int start, int end} {
+void PieceChain_Delete(PieceChain* pc, int start, int end) {
 
 }
 
-void PieceChain_Insert{PieceChain* pc, char* text, int start} {
+void PieceChain_Insert(PieceChain* pc, char* text) {
   TextPiece* tp = malloc(sizeof(TextPiece));
+  printf("Allocated text piece at %x\n" ,&tp);
   tp->source = pc->addBuffer;
-  tp->start = start;
+  tp->start = pc->lastAddLocation;
+  tp->next = NULL;
 
   // Does copying the string go out of bounds
   int len = strlen(text);
+  printf("string is %d long\n", len);
   if(pc->lastAddLocation + len > (sizeof(pc->addBuffer))) {
     pc->addBuffer = realloc(pc->addBuffer, sizeof(pc->addBuffer) + len);
   }
 
   strncpy(tp->source + pc->lastAddLocation, text, len);
+  printf("copied string to buffer at position %d, length %d\n", pc->lastAddLocation, len);
+  pc->lastAddLocation += len;
   
   pc->pieceCount++;
+  printf("There are %d pieces in the chain\n");
   pc->pieces = realloc(pc->pieces, pc->pieceCount * sizeof(TextPiece*));
-  pc[pieceCount - 1] = tp;
-  
+  pc->pieces[pc->pieceCount - 1] = *tp;
+	 //pc->pieces[pc->pieceCount - 2].next = tp;
 
 }
 
 void PrintPieceChain(PieceChain* pc) {
-  
-  for (p = pc[0]; p->next != NULL; p++) {
+  for (TextPiece* p = pc->pieces; p->next != NULL; p++) {
     char* buf = malloc((p->length + 1) * sizeof(char));
-    memcpy(buf, p->source + start, p->length);
-    printf("%s" buf);
+    memcpy(buf, p->source + p->start, p->length);
+    printf("%s ", buf);
+    printf("%d, %d", p->start, p->length);
+    printf("\n");
+    free(buf);
   }
+}
+
+PieceChain* CreatePieceChain(char* text) {
+  PieceChain* pc = malloc(sizeof(PieceChain));
+  pc->baseBuffer = calloc(1, strlen(text));
+  pc->addBuffer = calloc(1, 512);
+  strncpy(pc->baseBuffer, text, strlen(text));
+
+  printf("%s\n", pc->baseBuffer);
+
+  PieceChain_Insert(pc, text);
+  return pc;
 }
 
 //-------------------------------------------------------------------------//
@@ -482,7 +503,7 @@ typedef struct TextBox {
   PieceChain pc;
   int cursorX; int cursorY;
   int offsetX; int offsetY;
-  PieceTable* pt;
+  PieceChain* pt;
   int _lineCount;
 
   bool readOnly;
