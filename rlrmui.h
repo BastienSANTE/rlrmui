@@ -427,21 +427,6 @@ typedef struct PieceChain {
   int lastAddLocation;
 };
 
-int AbsPieceStart(PieceChain* pc, TextPiece* target) {
-  int totalLength = 0;
-  
-  for (TextPiece* tp = pc->head; tp->next != NULL; tp = tp->next) { // Traverse piece chain  
-    if (tp == target) {
-      return totalLength;
-    } else {
-      totalLength += tp->length;
-  }
-
-  ERROR("Invalid TextPiece / Piece Chain combination\n");
-  return 0; 
-  }
-}
-
 TextPiece* PieceFromPosition(PieceChain* pc, int pos) {
   int totalLength = 0; // Total length of traversed string
   
@@ -474,6 +459,16 @@ char CharacterAtPosition(PieceChain* pc, int pos) {
   return 0;
 }
 
+int OffsetInPiece(PieceChain* pc, int pos){
+  TextPiece* tp = pc->head;
+  int p = pos;
+  while ( p -= tp->length >= 0 && tp->next != pc->tail){
+    tp = tp->next;
+  }
+
+  return (pos - p); // Return relative offset in piece
+}
+
 
 /*Deletes a span from the "final text". This function calculates
  the necessary edits to the piece chain*/
@@ -497,7 +492,7 @@ void PieceChain_Insert(PieceChain* pc, char* text, int pos) {
   if(pc->lastAddLocation + len > (sizeof(pc->addBuffer))) {
     pc->addBuffer = realloc(pc->addBuffer, sizeof(pc->addBuffer) + len);
   }
-
+  
   strncpy(tp->source + pc->lastAddLocation, text, len);
   printf("copied string to buffer at position %d, length %d\n", pc->lastAddLocation, len);
   pc->lastAddLocation += len;
@@ -506,9 +501,9 @@ void PieceChain_Insert(PieceChain* pc, char* text, int pos) {
   
   // In which piece does insert begin ?
   TextPiece* startPiece = PieceFromPosition(pc, pos);
-
-  // Calculate character offset from beginning of span
-  int insOffset = pos - AbsPieceStart(pc, startPiece);
+  int insOffset = OffsetInPiece(pc, pos);
+  
+  // Calculate character offset from beginning of piece
   printf("Split at char %d of text piece, %s\n", insOffset);
 
 
@@ -531,13 +526,10 @@ void PieceChain_Insert(PieceChain* pc, char* text, int pos) {
 }
 
 void PrintPieceChain(PieceChain* pc) {
-  for (TextPiece* p = pc->head; p->next != NULL; p++) {
-    char* buf = malloc((p->length + 1) * sizeof(char));
-    memcpy(buf, p->source + p->start, p->length);
-    printf("%s ", buf);
-    printf("%d, %d", p->start, p->length);
+  for (TextPiece* tp = pc->head; tp->next != pc->tail; tp = tp->next) {
+    memcpy(buf, tp->source + tp->start, tp->length);
+    printf("%x | %d, %d", &tp->source, tp->start, tp->length);
     printf("\n");
-    free(buf);
   }
 }
 
@@ -555,11 +547,19 @@ PieceChain* CreatePieceChain(char* text) {
   pc->head = malloc(sizeof(TextPiece));
   pc->tail = malloc(sizeof(TextPiece));
   pc->head->prev = NULL; pc->tail->next = NULL;
-  pc->head->start = -1; pc->tail->start = -1;
-  pc->head->length = -1; pc->tail->length = -1;
+  pc->head->source = NULL; pc->tail->source = NULL;
+  pc->head->start = 0; pc->tail->start = 0;
+  pc->head->length = 0; pc->tail->length = 0;
+
+  TextPiece* fp = malloc(sizeof(TextPiece));
+  fp->source = pc->baseBuffer;
+  fp->start = 0; fp->length = strlen(text);
+  fp->prev = pc->head;
+  fp->next = pc->tail;
   
   printf("%s\n", pc->baseBuffer);
-  PieceChain_Insert(pc, text, 0);
+  
+
   return pc;
 }
 

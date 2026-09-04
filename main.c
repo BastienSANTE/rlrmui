@@ -44,12 +44,12 @@ int main(void) {
     }*/
 
   PieceChain* pc = CreatePieceChain("Lorem ipsum dolor sit amet");
-  PieceChain_Insert(pc, "Addition", 5);
+  // PieceChain_Insert(pc, "Addition", 5);
   
   //printf("Character at position 0 : %c\n", CharacterAtPosition(pc, 0));
 
   printf("%s\n", pc->addBuffer);
   
-  //PrintPieceChain(pc);
+  PrintPieceChain(pc);
   
 }
